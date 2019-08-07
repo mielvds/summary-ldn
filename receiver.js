@@ -41,9 +41,9 @@ function receive(filePath) {
     console.log(`Downloading summary ${ldn.object}!`)
     fetch(ldn.object).then(res => {
       if (res.ok) {
-        console.log(`Writing summary ${ldn.object}!`)
+        console.log(`Writing summary ${ldn.actor}!`)
         // write to summary dir
-        const dest = fs.createWriteStream(summaryDir + ldn.actor);
+        const dest = fs.createWriteStream(summaryDir + encodeURIComponent(ldn.actor));
         res.body.pipe(dest);
       }
     });

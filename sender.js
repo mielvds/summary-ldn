@@ -7,33 +7,47 @@ const N3 = require('n3');
 const fetch = require('node-fetch');
 const argv = require('minimist')(process.argv.slice(2));
 
-if (argv.h)
-  return console.log('npm run sender [host url] destination inbox]'), process.exit(1);
+if (argv.h || argv._.length < 1)
+  return console.log('npm run sender <LDF server dir> [LDF server config file] [-s <summary subdir>] [-h <host url>] [-i <destination inbox>]'), process.exit(1);
 
-const host = argv._[0] || 'http://localhost/';
-const dest = argv._[1] || 'http://example.org/inbox';
+const port = 3001;
+const ldfDir =  path.join(__dirname, argv._[0])
+const ldfConfig = path.join(ldfDir, argv._[1] || 'config.json');
+const summaryDir = path.join(ldfDir, argv.s || 'summaries/');
 
-const datasetsDir =  path.join(__dirname, argv.d || 'datasets/');
-const summaryDir =  path.join(__dirname, argv.s || 'summaries/');
-const summaryBaseURL = argv.b || (host + 'summaries/');
+const host = argv.h || `http://localhost:${port}/`;
+const dest = argv.i || 'http://example.org/inbox';
 
 // If summaryDir does not exist, create it
 if (!fs.existsSync(summaryDir)) {
   fs.mkdirSync(summaryDir);
 }
 
-// Initialize watcher.
-const watcher = chokidar.watch(datasetsDir + 'somSample.hdt', {
+// Initialize empty watcher.
+const watcher = chokidar.watch([], {
   ignored: /(^|[\/\\])\../,
   persistent: true,
   alwaysStat: true
 });
 
+//TODO: Change this to watching HDT's of a specific config
+const datasources = require(ldfConfig).datasources;
+const fileMap = {};
+for (const datasource in datasources) {
+  const config = datasources[datasource];
+  if (config.type === 'HdtDatasource') {
+    const file = path.join(ldfDir, config.settings.file);
+    console.log(`Added ${file} for ${datasource}`);
+    watcher.add(file);
+    fileMap[file] = datasource;
+  }
+}
+
 // Initialize task
 const q = async.queue(function(file, done) {
   console.log(`Running summarizer for ${file}`);
 
-  const summaryFile = path.basename(file) + '-summary.ttl';
+  const summaryFile = fileMap[file] + '.ttl';
   const summaryStream = new SummaryStream(file);
   const outputStream = fs.createWriteStream(summaryDir + summaryFile);
   const streamWriter = new N3.StreamWriter(summaryStream.prefixes);
@@ -44,7 +58,7 @@ const q = async.queue(function(file, done) {
 
   outputStream.on('close', () => {
     console.log('Summary created. Notifying register.');
-    notify(host, summaryBaseURL + summaryFile, dest).then(done);
+    notify(host + fileMap[file], host + 'summaries/' + fileMap[file], dest).then(done);
   });
 
   // This is here in case any errors occur
