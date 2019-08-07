@@ -7,8 +7,8 @@ const N3 = require('n3');
 const fetch = require('node-fetch');
 const argv = require('minimist')(process.argv.slice(2));
 
-if (argv._.length < 1 && argv._.length > 2)
-  return console.log('npm run sender <host url> <destination inbox>'), process.exit(1);
+if (argv.h)
+  return console.log('npm run sender [host url] destination inbox]'), process.exit(1);
 
 const host = argv._[0] || 'http://localhost/';
 const dest = argv._[1] || 'http://example.org/inbox';
@@ -23,9 +23,10 @@ if (!fs.existsSync(summaryDir)) {
 }
 
 // Initialize watcher.
-const watcher = chokidar.watch(datasetsDir + '*.hdt', {
+const watcher = chokidar.watch(datasetsDir + 'somSample.hdt', {
   ignored: /(^|[\/\\])\../,
-  persistent: true
+  persistent: true,
+  alwaysStat: true
 });
 
 // Initialize task
@@ -42,7 +43,7 @@ const q = async.queue(function(file, done) {
   streamWriter.pipe(outputStream);
 
   outputStream.on('close', () => {
-    console.log('done!');
+    console.log('Summary created. Notifying register.');
     notify(host, summaryBaseURL + summaryFile, dest).then(done);
   });
 
@@ -52,10 +53,10 @@ const q = async.queue(function(file, done) {
   });
 }, 1);
 
-watcher.on('change', path => {
-  console.log('found this hdt');
-  q.push(path);
-});
+watcher
+.on('add', path => q.push(path))
+.on('change', path => q.push(path));
+
 
 function notify(self, summary, destination) {
   const body = {
@@ -72,5 +73,7 @@ function notify(self, summary, destination) {
     method: 'post',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/ld+json' }
-  }).then(res => res.json());
+  }).then(res => {
+    return res.ok;
+  });
 }

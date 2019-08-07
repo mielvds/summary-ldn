@@ -51,7 +51,7 @@ class SummaryStream extends Readable {
 
           for (const triple of triples) {
             if (Util.isNamedNode(RdfString.stringToTerm(triple.subject))) {
-              const { authority } = this._getDomain(triple.subject);
+              const authority = this._getDomain(triple.subject);
               subjects.add(authority);
             }
               
@@ -60,7 +60,7 @@ class SummaryStream extends Readable {
               if (term === rdf + "type") {
                 objects.add(triple.object);
               } else {
-                const { authority } = this._getDomain(triple.object);
+                const authority = this._getDomain(triple.object);
                 objects.add(authority);
               }
             }
@@ -153,13 +153,10 @@ class SummaryStream extends Readable {
 
   _getDomain(url) {
     const match = url.match(
-      /^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/
+      /^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/\n]+)/
     );
 
-    return {
-      authority: `${match[2]}://${match[3]}`,
-      paths: match[4] + match[6]
-    };
+    return match[0];
   }
 
   _constructFilter(objects) {
