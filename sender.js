@@ -7,20 +7,19 @@ const N3 = require('n3');
 const fetch = require('node-fetch');
 const argv = require('minimist')(process.argv.slice(2));
 
-if (argv.h || argv._.length < 1)
-  return console.log('npm run sender <LDF server dir> [LDF server config file] [-s <summary subdir>] [-h <host url>] [-i <destination inbox>]'), process.exit(1);
+if (argv._.length < 1)
+  return console.log('npm run sender <LDF server config file> [-s <summary subdir>] [-h <host url>] [-i <destination inbox>] [-p <port>]'), process.exit(1);
 
-const port = 3001;
-const ldfDir =  path.join(__dirname, argv._[0])
-const ldfConfig = path.join(ldfDir, argv._[1] || 'config.json');
-const summaryDir = path.join(ldfDir, argv.s || 'summaries/');
+const port = argv.p | 3001;
+const ldfConfig = path.isAbsolute(argv._[0]) ? argv._[0] : path.join(__dirname, argv._[0] || 'config.json');
+const summaryDir = path.isAbsolute(argv.s) ? argv.s : path.join(path.basename(ldfConfig), argv.s || 'summaries');
 
 const host = argv.h || `http://localhost:${port}/`;
 const dest = argv.i || 'http://example.org/inbox';
 
 // If summaryDir does not exist, create it
 if (!fs.existsSync(summaryDir)) {
-  fs.mkdirSync(summaryDir);
+  fs.mkdirSync(summaryDir, { recursive: true });
 }
 
 // Initialize empty watcher.
@@ -36,7 +35,7 @@ const fileMap = {};
 for (const datasource in datasources) {
   const config = datasources[datasource];
   if (config.type === 'HdtDatasource') {
-    const file = path.join(ldfDir, config.settings.file);
+    const file = path.isAbsolute(config.settings.file) ? config.settings.file :  path.join(path.basename(ldfConfig), config.settings.file);
     console.log(`Added ${file} for ${datasource}`);
     watcher.add(file);
     fileMap[file] = datasource;
@@ -49,7 +48,7 @@ const q = async.queue(function(file, done) {
 
   const summaryFile = fileMap[file] + '.ttl';
   const summaryStream = new SummaryStream(file);
-  const outputStream = fs.createWriteStream(summaryDir + summaryFile);
+  const outputStream = fs.createWriteStream(path.join(summaryDir, summaryFile));
   const streamWriter = new N3.StreamWriter(summaryStream.prefixes);
   
 
@@ -82,6 +81,8 @@ function notify(self, summary, destination) {
     target: destination,
     updated: new Date().toISOString()
   };
+
+  console.log(body)
 
   return fetch(destination, {
     method: 'post',

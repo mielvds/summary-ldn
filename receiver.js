@@ -9,9 +9,9 @@ const argv = require('minimist')(process.argv.slice(2));
 //   return console.log('npm run receiver <host url> <destination inbox>'), process.exit(1);
 
 const config = mayktso.config();
+config.port = argv.p | 3001;
+config.authority = argv.h || `http://localhost:${config.port}/`
 mayktso.init({ config });
-
-console.log(config)
 
 // set dirs
 const inboxDir = path.join(config.rootPath, config.inboxPath);
@@ -39,11 +39,12 @@ function receive(filePath) {
   if (ldn['@type'] === 'Add') {
     //download summary
     console.log(`Downloading summary ${ldn.object}!`)
+
     fetch(ldn.object).then(res => {
       if (res.ok) {
         console.log(`Writing summary ${ldn.actor}!`)
         // write to summary dir
-        const dest = fs.createWriteStream(summaryDir + encodeURIComponent(ldn.actor));
+        const dest = fs.createWriteStream(path.join(summaryDir, encodeURIComponent(ldn.actor)));
         res.body.pipe(dest);
       }
     });
