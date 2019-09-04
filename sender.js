@@ -12,7 +12,8 @@ if (argv._.length < 1)
 
 const port = argv.p | 3001;
 const ldfConfig = path.isAbsolute(argv._[0]) ? argv._[0] : path.join(__dirname, argv._[0] || 'config.json');
-const summaryDir = path.isAbsolute(argv.s) ? argv.s : path.join(path.basename(ldfConfig), argv.s || 'summaries');
+const ldfConfigDir = path.dirname(ldfConfig);
+const summaryDir = (argv.s && path.isAbsolute(argv.s)) ? argv.s : path.join(ldfConfigDir, argv.s || 'summaries');
 
 const host = argv.h || `http://localhost:${port}/`;
 const dest = argv.i || 'http://example.org/inbox';
@@ -35,7 +36,7 @@ const fileMap = {};
 for (const datasource in datasources) {
   const config = datasources[datasource];
   if (config.type === 'HdtDatasource') {
-    const file = path.isAbsolute(config.settings.file) ? config.settings.file :  path.join(path.basename(ldfConfig), config.settings.file);
+    const file = path.isAbsolute(config.settings.file) ? config.settings.file :  path.join(ldfConfigDir, config.settings.file);
     console.log(`Added ${file} for ${datasource}`);
     watcher.add(file);
     fileMap[file] = datasource;
