@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <style>
+      rect {
+        fill: none;
+        pointer-events: all;
+      }
+
+      .node {
+        fill: #000;
+      }
+
+      .cursor {
+        fill: none;
+        stroke: brown;
+        pointer-events: none;
+      }
+
+      .link {
+        stroke: #999;
+      }
+    </style> -->
+  </head>
+  <body>
+    <script src="http://rdf.js.org/comunica-browser/versions/latest/packages/actor-init-sparql-rdfjs/comunica-browser.js"
+    <script>
+
+      const myEngine = Comunica.newEngine();
+      myEngine.query('SELECT * { ?s a <http://semweb.mmlab.be/ns/summaries#Summary> } LIMIT 100',
+        { sources: ['http://localhost:3002/sourceselect'] })
+        .then(function (result) {
+          result.bindingsStream.on('data', function (data) {
+            document.body.append(data + '\n')
+          });
+        });
+
+
+      let query =
+        "/sourceselect?subject=&predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type&object=http%3A%2F%2Fsemweb.mmlab.be%2Fns%2Fsummaries%23Summary";
+
+
+      </script>
+
+  </body>
+</html>

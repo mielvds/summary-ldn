@@ -11,30 +11,41 @@ const argv = require('minimist')(process.argv.slice(2));
 const config = mayktso.config();
 config.port = argv.p | 3001;
 config.authority = argv.h || `http://localhost:${config.port}/`
-mayktso.init({ config });
+mayktso.init({ config })
+.on('notification', receive);
 
 // set dirs
 const inboxDir = path.join(config.rootPath, config.inboxPath);
-const summaryDir =  path.join(config.rootPath, argv.s || 'received-summaries/');
+const summaryDir = (argv.s && path.isAbsolute(argv.s)) ? argv.s : path.join(config.rootPath, argv.s || 'received-summaries/');
+console.log('DIR: ', summaryDir)
+
+// If summaryDir does not exist, create it
+if (!fs.existsSync(summaryDir)) {
+  try {
+  fs.mkdirSync(summaryDir, { recursive: true });
+  } catch (e) {
+    console.log(e);
+  }
+}
 
 // Clear inbox
 const files = fs.readdirSync(inboxDir);
 files.forEach(file => fs.unlinkSync(path.join(inboxDir, file)));
 
 // Initialize watcher.
-const watcher = chokidar.watch(inboxDir, {
-  ignored: /(^|[\/\\])\../,
-  persistent: true
-});
+// const watcher = chokidar.watch(inboxDir, {
+//   ignored: /(^|[\/\\])\../,
+//   persistent: true
+// });
 
-watcher
-  .on('ready', () => console.log('Initial scan complete. Ready for changes'))
-  .on('add', receive);
+// watcher
+//   .on('ready', () => console.log('Initial scan complete. Ready for changes'))
+//   .on('add', () => receive(fs.readFileSync(filePath, { encoding: 'UTF-8' }), 'application/json-ld', 'utf-8'));
 
-function receive(filePath) {
-  const ldn = JSON.parse(fs.readFileSync(filePath, { encoding: 'UTF-8' }));
+function receive(data, type, encoding) {
+  const ldn = JSON.parse(data);
 
-  console.log(`Received LDN (${ldn['@type']})`)
+  console.log(`Received LDN (${ldn['@type']}): ${ldn.object}`)
 
   if (ldn['@type'] === 'Add') {
     //download summary
@@ -42,12 +53,14 @@ function receive(filePath) {
 
     fetch(ldn.object).then(res => {
       if (res.ok) {
-        console.log(`Writing summary ${ldn.actor}!`)
+        console.log(`Writing summary ${ldn.actor} to ${summaryDir}!`)
         // write to summary dir
         const dest = fs.createWriteStream(path.join(summaryDir, encodeURIComponent(ldn.actor)));
         res.body.pipe(dest);
+      } else {
+        console.log(`Can't get summary ${ldn.object}: ${res.statusText}!`)
       }
-    });
+    }).catch(err => console.log('Error during summary download: ' + err));
   }
 }
 

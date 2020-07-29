@@ -7,8 +7,8 @@ const N3 = require('n3');
 const fetch = require('node-fetch');
 const argv = require('minimist')(process.argv.slice(2));
 
-if (argv._.length < 1)
-  return console.log('npm run sender <LDF server config file> [-s <summary subdir>] [-h <host url>] [-i <destination inbox>] [-p <port>]'), process.exit(1);
+// if (argv._.length < 1)
+//   return console.log('npm run sender <LDF server config file> [-s <summary subdir>] [-h <host url>] [-i <destination inbox>] [-p <port>]'), process.exit(1);
 
 const port = argv.p | 3001;
 const ldfConfig = path.isAbsolute(argv._[0]) ? argv._[0] : path.join(__dirname, argv._[0] || 'config.json');
@@ -46,6 +46,7 @@ for (const datasource in datasources) {
 // Initialize task
 const q = async.queue(function(file, done) {
   console.log(`Running summarizer for ${file}`);
+  console.log(fileMap);
 
   const summaryFile = fileMap[file] + '.ttl';
   const summaryStream = new SummaryStream(file);
@@ -57,14 +58,12 @@ const q = async.queue(function(file, done) {
   streamWriter.pipe(outputStream);
 
   outputStream.on('close', () => {
-    console.log('Summary created. Notifying register.');
+    console.log(`Summary created and stored in ${path.join(summaryDir, summaryFile)}. Notifying register.`);
     notify(host + fileMap[file], host + 'summaries/' + fileMap[file], dest).then(done);
   });
 
   // This is here in case any errors occur
-  outputStream.on('error', function(err) {
-    console.log(err);
-  });
+  outputStream.on('error', (err) => console.log(err));
 }, 1);
 
 watcher
@@ -91,5 +90,5 @@ function notify(self, summary, destination) {
     headers: { 'Content-Type': 'application/ld+json' }
   }).then(res => {
     return res.ok;
-  });
+  }).catch(err => console.error(err));
 }
