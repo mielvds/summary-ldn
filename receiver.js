@@ -32,16 +32,6 @@ if (!fs.existsSync(summaryDir)) {
 const files = fs.readdirSync(inboxDir);
 files.forEach(file => fs.unlinkSync(path.join(inboxDir, file)));
 
-// Initialize watcher.
-// const watcher = chokidar.watch(inboxDir, {
-//   ignored: /(^|[\/\\])\../,
-//   persistent: true
-// });
-
-// watcher
-//   .on('ready', () => console.log('Initial scan complete. Ready for changes'))
-//   .on('add', () => receive(fs.readFileSync(filePath, { encoding: 'UTF-8' }), 'application/json-ld', 'utf-8'));
-
 function receive(data, type, encoding) {
   const ldn = JSON.parse(data);
 
