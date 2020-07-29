@@ -1,4 +1,4 @@
-const SummaryStream = require('./SummaryStream');
+const SummaryStream = require('./lib/SummaryStream');
 const path = require('path');
 const chokidar = require('chokidar');
 const async = require('async');
@@ -30,7 +30,7 @@ const watcher = chokidar.watch([], {
   alwaysStat: true
 });
 
-//TODO: Change this to watching HDT's of a specific config
+//Watching HDT's of a specific config
 const datasources = require(ldfConfig).datasources;
 const fileMap = {};
 for (const datasource in datasources) {

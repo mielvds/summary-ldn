@@ -17,7 +17,7 @@
     "chokidar": "^3.2.1",
     "cli-progress": "^2.1.1",
     "etag": "^1.8.1",
-    "hdt": "^2.2.0",
+    "hdt": "^3.0.2",
     "lodash": "^4.17.11",
     "mayktso": "git://github.com/csarven/mayktso.git#master",
     "minimist": "^1.2.0",
