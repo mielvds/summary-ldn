@@ -7,8 +7,8 @@ const N3 = require('n3');
 const fetch = require('node-fetch');
 const argv = require('minimist')(process.argv.slice(2));
 
-// if (argv._.length < 1)
-//   return console.log('npm run sender <LDF server config file> [-s <summary subdir>] [-h <host url>] [-i <destination inbox>] [-p <port>]'), process.exit(1);
+if (argv._.length < 1)
+  return console.log('npm run sender <LDF server config file> [-s <summary subdir>] [-h <host url>] [-i <destination inbox>] [-p <port>]'), process.exit(1);
 
 const port = argv.p | 3001;
 const ldfConfig = path.isAbsolute(argv._[0]) ? argv._[0] : path.join(__dirname, argv._[0] || 'config.json');
